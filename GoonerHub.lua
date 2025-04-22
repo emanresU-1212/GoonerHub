@@ -1,46 +1,30 @@
 local Players = game:GetService("Players")
-local UserInputService = game:GetService("UserInputService")
 
-local gui = script.Parent -- The parent should be a ScreenGui.
-local frame = gui:FindFirstChild("MainGUI") -- Make sure this frame exists in the GUI.
-
--- Function to add a highlight to a player's character
 local function addHighlight(character)
-    if character and not character:FindFirstChild("PlayerHighlight") then
-        local highlight = Instance.new("Highlight")
-        highlight.Name = "PlayerHighlight"
-        highlight.FillColor = Color3.fromRGB(255, 0, 0)   -- Red fill
-        highlight.OutlineColor = Color3.fromRGB(255, 0, 0) -- Red outline
-        highlight.Parent = character
+    -- Avoid duplicate highlights
+    if character:FindFirstChild("PlayerHighlight") then
+        return
     end
+
+    local highlight = Instance.new("Highlight")
+    highlight.Name = "PlayerHighlight"
+    highlight.FillColor = Color3.fromRGB(255, 0, 0)       -- Set to red
+    highlight.FillTransparency = 0.5                      -- Adjust as needed (0 = opaque, 1 = invisible)
+    highlight.OutlineTransparency = 0.8                   -- Optionally adjust the outline
+    highlight.Parent = character
 end
 
--- Listen for players joining and add highlights
-local function onPlayerAdded(player)
-    player.CharacterAdded:Connect(function(character)
-        addHighlight(character)
-    end)
+local function setupCharacter(player)
     if player.Character then
         addHighlight(player.Character)
     end
+    player.CharacterAdded:Connect(addHighlight)
 end
 
--- Apply highlights to existing players
-for _, player in ipairs(Players:GetPlayers()) do
-    onPlayerAdded(player)
+-- Apply highlights to all current players
+for _, player in pairs(Players:GetPlayers()) do
+    setupCharacter(player)
 end
 
-Players.PlayerAdded:Connect(onPlayerAdded) -- Monitor new players
-
--- Enable dragging for the MainGUI
-if frame then
-    frame.Active = true
-    frame.Draggable = true
-
-    -- Toggle GUI visibility when "Insert" key is pressed
-    UserInputService.InputBegan:Connect(function(input, gameProcessed)
-        if not gameProcessed and input.KeyCode == Enum.KeyCode.Insert then
-            frame.Visible = not frame.Visible -- Toggle visibility
-        end
-    end)
-end
+-- Ensure new players get highlighted upon joining
+Players.PlayerAdded:Connect(setupCharacter)
