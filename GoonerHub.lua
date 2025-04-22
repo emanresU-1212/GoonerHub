@@ -7,11 +7,11 @@
       • Name Tags (BillboardGui) above player heads.
       • Camera Lock:
           - Uses your head’s position to blend your camera toward an opposing player’s head
-            if it lies within a designated FOV.
-          - The FOV “circle” is now reimplemented as a filled UI element in the middle of the screen.
+            if that target lies within a designated FOV.
+          - The FOV “circle” is a UI element in the middle of the screen.
           - Its diameter is adjustable via the "FOV:" textbox.
           - A “Strength:” textbox lets you adjust how quickly the camera blends.
-          - A new "Circle Display" toggle lets you show or hide the circle.
+          - A "Circle Display" toggle lets you show or hide the FOV circle.
     Press "Insert" to show/hide the MainGUI.
     
     DISCLAIMER: Use only in your own games or with proper permissions.
@@ -30,13 +30,15 @@ local LocalPlayer = Players.LocalPlayer
 local highlightEnabled = true
 local nameTagEnabled = true
 local cameraLockEnabled = false  -- toggled via MainGUI
-local cameraLockActive = false   -- becomes true while holding right mouse button (RMB)
+local cameraLockActive = false   -- becomes true while holding RMB
 
-local cameraLockFOV = 200        -- diameter of the FOV (in pixels)
-local cameraLockStrength = 0.5   -- blend strength (0 = no influence, 1 = full lock)
+local cameraLockFOV = 200       -- diameter (in pixels) of the FOV circle
+local cameraLockStrength = 0.5  -- blending strength (0 = no influence, 1 = full lock)
 
--- New option: whether the FOV circle is visible
-local circleDisplayEnabled = true
+local circleDisplayEnabled = true  -- whether the FOV circle is visible
+
+-- Forward-declare the FOV circle so that event handlers can reference it
+local fovCircle
 
 ---------------------
 -- Visual Effects: Red Highlight & Name Tags
@@ -55,7 +57,7 @@ local function addNameTag(character, player)
     local head = character:FindFirstChild("Head") or character:WaitForChild("Head", 5)
     if not head then return end
     if character:FindFirstChild("NameTag") then return end
-    
+
     local billboard = Instance.new("BillboardGui")
     billboard.Name = "NameTag"
     billboard.Adornee = head
@@ -75,7 +77,6 @@ local function addNameTag(character, player)
 end
 
 local function updateEffectsForCharacter(character, player)
-    -- Red Highlight
     local highlight = character:FindFirstChild("PlayerHighlight")
     if highlightEnabled then
         if not highlight then
@@ -86,8 +87,7 @@ local function updateEffectsForCharacter(character, player)
             highlight:Destroy()
         end
     end
-    
-    -- Name Tag
+
     local nameTag = character:FindFirstChild("NameTag")
     if nameTagEnabled then
         local head = character:FindFirstChild("Head") or character:WaitForChild("Head", 5)
@@ -141,7 +141,7 @@ local mainGUI = Instance.new("Frame")
 mainGUI.Name = "MainGUI"
 mainGUI.Size = UDim2.new(0, 300, 0, 430)
 mainGUI.Position = UDim2.new(0, 10, 0, 10)
-mainGUI.BackgroundColor3 = Color3.fromRGB(32,32,32)
+mainGUI.BackgroundColor3 = Color3.fromRGB(32, 32, 32)
 mainGUI.BorderSizePixel = 0
 mainGUI.Parent = screenGui
 
@@ -153,7 +153,7 @@ mainGuiCorner.Parent = mainGUI
 local titleBar = Instance.new("Frame")
 titleBar.Name = "TitleBar"
 titleBar.Size = UDim2.new(1, 0, 0, 30)
-titleBar.BackgroundColor3 = Color3.fromRGB(25,25,25)
+titleBar.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 titleBar.BorderSizePixel = 0
 titleBar.Parent = mainGUI
 
@@ -167,12 +167,12 @@ titleLabel.Size = UDim2.new(1, -10, 1, 0)
 titleLabel.Position = UDim2.new(0, 5, 0, 0)
 titleLabel.BackgroundTransparency = 1
 titleLabel.Text = "GoonerHub    By Goonerman"
-titleLabel.TextColor3 = Color3.new(1,1,1)
+titleLabel.TextColor3 = Color3.new(1, 1, 1)
 titleLabel.TextScaled = true
 titleLabel.Font = Enum.Font.SourceSansBold
 titleLabel.Parent = titleBar
 
--- Draggability via TitleBar
+-- Draggability via the Title Bar
 local dragging = false
 local dragInput, dragStart, startPos
 
@@ -187,7 +187,6 @@ titleBar.InputBegan:Connect(function(input)
         dragging = true
         dragStart = input.Position
         startPos = mainGUI.Position
-
         input.Changed:Connect(function()
             if input.UserInputState == Enum.UserInputState.End then
                 dragging = false
@@ -221,8 +220,8 @@ local highlightButton = Instance.new("TextButton")
 highlightButton.Name = "HighlightButton"
 highlightButton.Size = UDim2.new(1, 0, 0, 40)
 highlightButton.Position = UDim2.new(0, 0, 0, 0)
-highlightButton.BackgroundColor3 = Color3.fromRGB(70,70,70)
-highlightButton.TextColor3 = Color3.new(1,1,1)
+highlightButton.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+highlightButton.TextColor3 = Color3.new(1, 1, 1)
 highlightButton.TextScaled = true
 highlightButton.Font = Enum.Font.SourceSansBold
 highlightButton.Text = "Red Highlight: Enabled"
@@ -233,8 +232,8 @@ local nameTagButton = Instance.new("TextButton")
 nameTagButton.Name = "NameTagButton"
 nameTagButton.Size = UDim2.new(1, 0, 0, 40)
 nameTagButton.Position = UDim2.new(0, 0, 0, 45)
-nameTagButton.BackgroundColor3 = Color3.fromRGB(70,70,70)
-nameTagButton.TextColor3 = Color3.new(1,1,1)
+nameTagButton.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+nameTagButton.TextColor3 = Color3.new(1, 1, 1)
 nameTagButton.TextScaled = true
 nameTagButton.Font = Enum.Font.SourceSansBold
 nameTagButton.Text = "Name Tags: Enabled"
@@ -245,8 +244,8 @@ local cameraLockButton = Instance.new("TextButton")
 cameraLockButton.Name = "CameraLockButton"
 cameraLockButton.Size = UDim2.new(1, 0, 0, 40)
 cameraLockButton.Position = UDim2.new(0, 0, 0, 90)
-cameraLockButton.BackgroundColor3 = Color3.fromRGB(70,70,70)
-cameraLockButton.TextColor3 = Color3.new(1,1,1)
+cameraLockButton.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+cameraLockButton.TextColor3 = Color3.new(1, 1, 1)
 cameraLockButton.TextScaled = true
 cameraLockButton.Font = Enum.Font.SourceSansBold
 cameraLockButton.Text = "Camera Lock: Disabled"
@@ -267,17 +266,17 @@ fovLabel.BackgroundTransparency = 1
 fovLabel.Text = "FOV:"
 fovLabel.TextScaled = true
 fovLabel.Font = Enum.Font.SourceSansBold
-fovLabel.TextColor3 = Color3.new(1,1,1)
+fovLabel.TextColor3 = Color3.new(1, 1, 1)
 fovLabel.Parent = fovFrame
 
 local fovTextBox = Instance.new("TextBox")
 fovTextBox.Name = "FOVTextBox"
 fovTextBox.Size = UDim2.new(0, 60, 0.8, 0)
 fovTextBox.Position = UDim2.new(0, 55, 0.1, 0)
-fovTextBox.BackgroundColor3 = Color3.fromRGB(100,100,100)
+fovTextBox.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
 fovTextBox.TextScaled = true
 fovTextBox.Font = Enum.Font.SourceSansBold
-fovTextBox.TextColor3 = Color3.new(1,1,1)
+fovTextBox.TextColor3 = Color3.new(1, 1, 1)
 fovTextBox.Text = tostring(cameraLockFOV)
 fovTextBox.Parent = fovFrame
 
@@ -296,17 +295,17 @@ strengthLabel.BackgroundTransparency = 1
 strengthLabel.Text = "Strength:"
 strengthLabel.TextScaled = true
 strengthLabel.Font = Enum.Font.SourceSansBold
-strengthLabel.TextColor3 = Color3.new(1,1,1)
+strengthLabel.TextColor3 = Color3.new(1, 1, 1)
 strengthLabel.Parent = strengthFrame
 
 local strengthTextBox = Instance.new("TextBox")
 strengthTextBox.Name = "StrengthTextBox"
 strengthTextBox.Size = UDim2.new(0, 60, 0.8, 0)
 strengthTextBox.Position = UDim2.new(0, 75, 0.1, 0)
-strengthTextBox.BackgroundColor3 = Color3.fromRGB(100,100,100)
+strengthTextBox.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
 strengthTextBox.TextScaled = true
 strengthTextBox.Font = Enum.Font.SourceSansBold
-strengthTextBox.TextColor3 = Color3.new(1,1,1)
+strengthTextBox.TextColor3 = Color3.new(1, 1, 1)
 strengthTextBox.Text = tostring(cameraLockStrength)
 strengthTextBox.Parent = strengthFrame
 
@@ -315,15 +314,15 @@ local circleDisplayButton = Instance.new("TextButton")
 circleDisplayButton.Name = "CircleDisplayButton"
 circleDisplayButton.Size = UDim2.new(1, 0, 0, 40)
 circleDisplayButton.Position = UDim2.new(0, 0, 0, 225)
-circleDisplayButton.BackgroundColor3 = Color3.fromRGB(70,70,70)
-circleDisplayButton.TextColor3 = Color3.new(1,1,1)
+circleDisplayButton.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+circleDisplayButton.TextColor3 = Color3.new(1, 1, 1)
 circleDisplayButton.TextScaled = true
 circleDisplayButton.Font = Enum.Font.SourceSansBold
 circleDisplayButton.Text = "Circle Display: Enabled"
 circleDisplayButton.Parent = toggleFrame
 
 ---------------------
--- UI Button Events for Toggles and Settings
+-- UI Button Events
 ---------------------
 highlightButton.MouseButton1Click:Connect(function()
     highlightEnabled = not highlightEnabled
@@ -347,7 +346,9 @@ fovTextBox.FocusLost:Connect(function(enterPressed)
     if newFov then
         cameraLockFOV = newFov
         fovTextBox.Text = tostring(newFov)
-        fovCircle.Size = UDim2.new(0, cameraLockFOV, 0, cameraLockFOV)
+        if fovCircle then
+            fovCircle.Size = UDim2.new(0, cameraLockFOV, 0, cameraLockFOV)
+        end
     else
         fovTextBox.Text = tostring(cameraLockFOV)
     end
@@ -366,7 +367,9 @@ end)
 circleDisplayButton.MouseButton1Click:Connect(function()
     circleDisplayEnabled = not circleDisplayEnabled
     circleDisplayButton.Text = "Circle Display: " .. (circleDisplayEnabled and "Enabled" or "Disabled")
-    fovCircle.Visible = circleDisplayEnabled
+    if fovCircle then
+        fovCircle.Visible = circleDisplayEnabled
+    end
 end)
 
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
@@ -377,15 +380,15 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
 end)
 
 ---------------------
--- Create the New FOV Circle in the Center of the Screen
+-- Create the FOV Circle in the Center of the Screen
 ---------------------
-local fovCircle = Instance.new("Frame")
+fovCircle = Instance.new("Frame")
 fovCircle.Name = "FOVCircle"
 fovCircle.AnchorPoint = Vector2.new(0.5, 0.5)
 fovCircle.Position = UDim2.new(0.5, 0, 0.5, 0)
 fovCircle.Size = UDim2.new(0, cameraLockFOV, 0, cameraLockFOV)
-fovCircle.BackgroundColor3 = Color3.new(1,1,1)
-fovCircle.BackgroundTransparency = 0.2  -- Adjust this value if needed so the circle is visible
+fovCircle.BackgroundColor3 = Color3.new(1, 1, 1)
+fovCircle.BackgroundTransparency = 0.2
 fovCircle.BorderSizePixel = 0
 fovCircle.Visible = circleDisplayEnabled
 fovCircle.Parent = screenGui
@@ -397,11 +400,10 @@ circleUICorner.Parent = fovCircle
 ---------------------
 -- Camera Lock Functionality
 ---------------------
--- Finds the head of an opposing player whose screen position is inside the FOV circle.
 local function findTargetInFOVCircle()
     local cam = Workspace.CurrentCamera
     local viewportSize = cam.ViewportSize
-    local screenCenter = Vector2.new(viewportSize.X/2, viewportSize.Y/2)
+    local screenCenter = Vector2.new(viewportSize.X / 2, viewportSize.Y / 2)
     local radius = cameraLockFOV / 2
     local bestTarget = nil
     local bestDistance = math.huge
@@ -424,7 +426,6 @@ local function findTargetInFOVCircle()
     return bestTarget
 end
 
--- Using RMB to enable camera lock (while refraining from changing camera type so you still have control)
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
     if input.UserInputType == Enum.UserInputType.MouseButton2 then
@@ -440,7 +441,6 @@ UserInputService.InputEnded:Connect(function(input, gameProcessed)
     end
 end)
 
--- Update camera each RenderStep: blend your camera (from your head) toward the target if inside FOV.
 RunService:BindToRenderStep("CameraLock", Enum.RenderPriority.Camera.Value + 1, function()
     local cam = Workspace.CurrentCamera
     if cameraLockActive and cameraLockEnabled then
