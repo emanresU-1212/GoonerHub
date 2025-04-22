@@ -30,12 +30,14 @@ end
 
 -- GUI Setup inside `StarterPlayerScripts`
 local screenGui = Instance.new("ScreenGui")
-screenGui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui") -- Now properly assigned to LocalPlayer
+screenGui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui") -- Correctly parented
 
 local frame = Instance.new("Frame")
 frame.Size = UDim2.new(0, 150, 0, 50)
 frame.Position = UDim2.new(0, 0.01, 0, 0.01)
 frame.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2)
+frame.Active = true -- Allows input events
+frame.Draggable = true -- Makes the frame draggable
 frame.Parent = screenGui
 
 local button = Instance.new("TextButton")
@@ -60,4 +62,3 @@ Players.PlayerAdded:Connect(function(player)
 end)
 
 updateAllPlayers() -- Ensure all players have ESP applied
-
