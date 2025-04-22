@@ -1,10 +1,7 @@
---[[
-    Highlight All Players Red & NameTag Script for Roblox
-    This script automatically highlights every player’s character with a red overlay
-    and attaches a BillboardGui that shows the player's name above their head.
-    DISCLAIMER: Use only in your own games and with proper permissions.
---]]
-
+while true do
+    wait(0.5)
+    print('hi')
+end
 local Players = game:GetService("Players")
 
 -- Function to add a red highlight to the player's character
