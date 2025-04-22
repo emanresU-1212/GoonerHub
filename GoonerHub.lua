@@ -1,34 +1,46 @@
 local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
 
--- Adds a Highlight to the given character.
+local gui = script.Parent -- The parent should be a ScreenGui.
+local frame = gui:FindFirstChild("MainGUI") -- Make sure this frame exists in the GUI.
+
+-- Function to add a highlight to a player's character
 local function addHighlight(character)
-    -- Check if the character exists and doesn't already have a highlight.
     if character and not character:FindFirstChild("PlayerHighlight") then
         local highlight = Instance.new("Highlight")
         highlight.Name = "PlayerHighlight"
-        -- Customize these colors as desired.
-        highlight.FillColor = Color3.fromRGB(1, 0, 0)   
-        highlight.OutlineColor = Color3.fromRGB(255, 0, 0) 
+        highlight.FillColor = Color3.fromRGB(255, 0, 0)   -- Red fill
+        highlight.OutlineColor = Color3.fromRGB(255, 0, 0) -- Red outline
         highlight.Parent = character
     end
 end
 
--- Called whenever a new player joins.
+-- Listen for players joining and add highlights
 local function onPlayerAdded(player)
-    -- When this player's character appears, add the highlight.
     player.CharacterAdded:Connect(function(character)
         addHighlight(character)
     end)
-    -- If the character already exists, highlight it immediately.
     if player.Character then
         addHighlight(player.Character)
     end
 end
 
--- Highlight all players that are currently in the game.
+-- Apply highlights to existing players
 for _, player in ipairs(Players:GetPlayers()) do
     onPlayerAdded(player)
 end
 
--- Listen for and highlight any new players.
-Players.PlayerAdded:Connect(onPlayerAdded)
+Players.PlayerAdded:Connect(onPlayerAdded) -- Monitor new players
+
+-- Enable dragging for the MainGUI
+if frame then
+    frame.Active = true
+    frame.Draggable = true
+
+    -- Toggle GUI visibility when "Insert" key is pressed
+    UserInputService.InputBegan:Connect(function(input, gameProcessed)
+        if not gameProcessed and input.KeyCode == Enum.KeyCode.Insert then
+            frame.Visible = not frame.Visible -- Toggle visibility
+        end
+    end)
+end
