@@ -1,7 +1,10 @@
-while true do
-    wait(0.5)
-    print('hi')
-end
+--[[
+    Highlight All Players Red & NameTag Script for Roblox
+    This script automatically highlights every player’s character with a red overlay
+    and attaches a BillboardGui that shows the player's name above their head.
+    DISCLAIMER: Use only in your own games and with proper permissions.
+--]]
+
 local Players = game:GetService("Players")
 
 -- Function to add a red highlight to the player's character
@@ -25,26 +28,27 @@ local function addNameTag(character, player)
         return
     end
 
-    -- Prevent duplicate name tags
-    if head:FindFirstChild("NameTag") then
+    -- Prevent duplicate name tags by checking for an existing one in the character
+    if character:FindFirstChild("NameTag") then
         return
     end
 
     local billboard = Instance.new("BillboardGui")
     billboard.Name = "NameTag"
     billboard.Adornee = head
-    billboard.Parent = head
+    billboard.Parent = character           -- Parent to character instead of head
     billboard.Size = UDim2.new(0, 200, 0, 50)
     billboard.StudsOffset = Vector3.new(0, 2, 0)  -- Positions label slightly above the head
     billboard.AlwaysOnTop = true
 
-    local textLabel = Instance.new("TextLabel", billboard)
+    local textLabel = Instance.new("TextLabel")
     textLabel.Size = UDim2.new(1, 0, 1, 0)
     textLabel.BackgroundTransparency = 1
     textLabel.TextColor3 = Color3.new(1, 1, 1)       -- White text
     textLabel.TextScaled = true
     textLabel.Font = Enum.Font.SourceSansBold
     textLabel.Text = player.Name
+    textLabel.Parent = billboard
 end
 
 -- Sets up a player's character when they join or respawn
