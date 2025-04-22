@@ -1,24 +1,24 @@
-local function highlightPlayers()
-    local highlightColor = Color3.fromRGB(255, 0, 0) -- Red highlight
+local function applyHighlight(player)
+    local highlight = Instance.new("Highlight")
+    highlight.Parent = player.Character
+    highlight.FillColor = Color3.new(1, 0, 0) -- Red color
+    highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+end
 
+local function highlightAllPlayers()
     for _, player in pairs(game.Players:GetPlayers()) do
         if player.Character then
-            for _, part in pairs(player.Character:GetChildren()) do
-                if part:IsA("BasePart") then
-                    if not part:FindFirstChild("Highlight") then
-                        local highlight = Instance.new("Highlight")
-                        highlight.Adornee = part
-                        highlight.FillColor = highlightColor
-                        highlight.Parent = part
-                    end
-                end
-            end
+            applyHighlight(player)
         end
     end
 end
 
--- Continuously update every 5 seconds
-while true do
-    highlightPlayers()
-    task.wait(5) -- Wait 5 seconds before refreshing
-end
+-- Apply highlight when a player joins
+game.Players.PlayerAdded:Connect(function(player)
+    player.CharacterAdded:Connect(function()
+        applyHighlight(player)
+    end)
+end)
+
+-- Apply highlight to all existing players
+highlightAllPlayers()
