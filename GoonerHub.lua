@@ -1,17 +1,17 @@
 --[[
     GoonerHub - By Goonerman
-
+    
     This LocalScript creates a draggable MainGUI (with rounded corners and a title bar)
     that contains toggle buttons for:
       • Red Highlight effect on all player characters.
       • Name Tags (BillboardGui) above player heads.
       • Camera Lock:
-            - Shows a translucent circular FOV indicator (0.8 transparency) in the center of the screen.
-            - The circle's diameter is adjustable via a text box labeled "FOV:".
-            - A separate "Strength:" text box allows you to adjust the blending strength (0 to 1)
-              used when locking the camera.
+            - Displays a filled, translucent circular FOV indicator (BackgroundTransparency set to 0.2 so it’s visible)
+              in the center of the screen.
+            - The circle’s diameter is adjustable via a text box labeled "FOV:".
+            - A separate "Strength:" text box lets you adjust the blending strength (0 to 1) used when locking the camera.
             - When enabled and while holding Mouse Button2, the camera (originating from your head)
-              will gradually aim toward the target player's head only if that head falls inside the circle.
+              will gradually blend toward the target player's head—provided that head falls within the FOV circle.
     Press "Insert" to show/hide the MainGUI.
     
     DISCLAIMER: Use only in games you own or with proper permissions.
@@ -29,21 +29,21 @@ local LocalPlayer = Players.LocalPlayer
 -- Feature toggles
 local highlightEnabled = true
 local nameTagEnabled = true
-local cameraLockEnabled = false  -- toggled via UI
-local cameraLockActive = false   -- becomes true when right mouse button is held
+local cameraLockEnabled = false  -- toggled via MainGUI
+local cameraLockActive = false   -- becomes true while holding Mouse Button2
 
 -- Camera Lock settings
 local cameraLockFOV = 200        -- diameter (in pixels) of the FOV circle
 local cameraLockStrength = 0.5   -- blending strength (0 = no influence, 1 = full lock)
 
 ---------------------
--- Existing Effects: Red Highlight & Name Tags
+-- Existing Visual Effects: Red Highlight & Name Tags
 ---------------------
 local function addHighlight(character)
     if character:FindFirstChild("PlayerHighlight") then return end
     local highlight = Instance.new("Highlight")
     highlight.Name = "PlayerHighlight"
-    highlight.FillColor = Color3.fromRGB(255, 0, 0)  -- red color
+    highlight.FillColor = Color3.fromRGB(255, 0, 0)
     highlight.FillTransparency = 0.5
     highlight.OutlineTransparency = 0.8
     highlight.Parent = character
@@ -53,7 +53,7 @@ local function addNameTag(character, player)
     local head = character:FindFirstChild("Head") or character:WaitForChild("Head", 5)
     if not head then return end
     if character:FindFirstChild("NameTag") then return end
-    
+
     local billboard = Instance.new("BillboardGui")
     billboard.Name = "NameTag"
     billboard.Adornee = head
@@ -73,7 +73,7 @@ local function addNameTag(character, player)
 end
 
 local function updateEffectsForCharacter(character, player)
-    -- Red Highlight
+    -- Red Highlight Effect
     local highlight = character:FindFirstChild("PlayerHighlight")
     if highlightEnabled then
         if not highlight then
@@ -85,7 +85,7 @@ local function updateEffectsForCharacter(character, player)
         end
     end
 
-    -- Name Tag
+    -- Name Tag Effect
     local nameTag = character:FindFirstChild("NameTag")
     if nameTagEnabled then
         local head = character:FindFirstChild("Head") or character:WaitForChild("Head", 5)
@@ -129,13 +129,12 @@ local function updateAllPlayerEffects()
 end
 
 ---------------------
--- Create the Main GUI and Draggability
+-- Create the Main GUI & Make It Draggable
 ---------------------
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "GoonerHubGUI"
 screenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
--- Adjust MainGUI height to accomodate extra settings (FOV and Strength)
 local mainGUI = Instance.new("Frame")
 mainGUI.Name = "MainGUI"
 mainGUI.Size = UDim2.new(0, 300, 0, 380)
@@ -171,7 +170,7 @@ titleLabel.TextScaled = true
 titleLabel.Font = Enum.Font.SourceSansBold
 titleLabel.Parent = titleBar
 
--- Make MainGUI draggable via the title bar.
+-- Draggability
 local dragging = false
 local dragInput, dragStart, startPos
 
@@ -207,7 +206,7 @@ UserInputService.InputChanged:Connect(function(input)
     end
 end)
 
--- Container for Setting Buttons and Options
+-- Container for Toggle Buttons and Options
 local toggleFrame = Instance.new("Frame")
 toggleFrame.Name = "ToggleFrame"
 toggleFrame.Position = UDim2.new(0, 10, 0, 35)
@@ -352,7 +351,7 @@ strengthTextBox.FocusLost:Connect(function(enterPressed)
 end)
 
 ---------------------
--- Toggle Main GUI Visibility with the Insert Key
+-- Toggle MainGUI Visibility with Insert Key
 ---------------------
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
@@ -370,7 +369,8 @@ cameraLockCircle.AnchorPoint = Vector2.new(0.5, 0.5)
 cameraLockCircle.Position = UDim2.new(0.5, 0, 0.5, 0)
 cameraLockCircle.Size = UDim2.new(0, cameraLockFOV, 0, cameraLockFOV)
 cameraLockCircle.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-cameraLockCircle.BackgroundTransparency = 0.8  -- translucent filled circle
+-- Set to 0.2 so the circle is clearly visible (adjust as needed)
+cameraLockCircle.BackgroundTransparency = 0.2  
 cameraLockCircle.BorderSizePixel = 0
 cameraLockCircle.Visible = cameraLockEnabled
 cameraLockCircle.Parent = screenGui
@@ -380,9 +380,10 @@ circleUICorner.CornerRadius = UDim.new(0.5, 0)
 circleUICorner.Parent = cameraLockCircle
 
 ---------------------
--- Camera Lock Functionality
+-- Camera Lock Functionality (New Version Only)
 ---------------------
--- Returns the head of a player (other than you) whose screen position is inside the FOV circle.
+-- This function returns the head of a player (other than you)
+-- whose screen position lies inside the FOV circle (using its radius).
 local function findTargetInFOVCircle()
     local cam = Workspace.CurrentCamera
     local viewportSize = cam.ViewportSize
@@ -409,14 +410,13 @@ local function findTargetInFOVCircle()
     return bestTarget
 end
 
--- Right Mouse Button (MouseButton2) enables camera lock while held.
+-- Use RMB to toggle cameraLockActive (do not change camera type now,
+-- so you still have full access to your camera controls)
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
     if input.UserInputType == Enum.UserInputType.MouseButton2 then
         if cameraLockEnabled then
             cameraLockActive = true
-            local cam = Workspace.CurrentCamera
-            cam.CameraType = Enum.CameraType.Scriptable
         end
     end
 end)
@@ -424,13 +424,13 @@ end)
 UserInputService.InputEnded:Connect(function(input, gameProcessed)
     if input.UserInputType == Enum.UserInputType.MouseButton2 then
         cameraLockActive = false
-        local cam = Workspace.CurrentCamera
-        cam.CameraType = Enum.CameraType.Custom
     end
 end)
 
--- Update the camera each frame if camera lock is active.
-RunService.RenderStepped:Connect(function()
+-- Bind a RenderStep to update the camera every frame.
+-- We use a priority slightly higher than the default camera update,
+-- so our Lerp blend takes effect afterward.
+RunService:BindToRenderStep("CameraLock", Enum.RenderPriority.Camera.Value + 1, function()
     local cam = Workspace.CurrentCamera
     if cameraLockActive and cameraLockEnabled then
         local localHead = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Head")
