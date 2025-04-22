@@ -10,7 +10,7 @@ local function addHighlight(character)
     highlight.Name = "PlayerHighlight"
     highlight.FillColor = Color3.fromRGB(255, 0, 0)       -- Set to red
     highlight.FillTransparency = 0.5                      -- Adjust as needed (0 = opaque, 1 = invisible)
-    highlight.OutlineTransparency = 0.8                   -- Optionally adjust the outline
+    highlight.OutlineTransparency = 0.2                   -- Optionally adjust the outline
     highlight.Parent = character
 end
 
