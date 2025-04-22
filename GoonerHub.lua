@@ -7,8 +7,8 @@ local function addHighlight(character)
         local highlight = Instance.new("Highlight")
         highlight.Name = "PlayerHighlight"
         -- Customize these colors as desired.
-        highlight.FillColor = Color3.fromRGB(255, 255, 0)   -- Yellow fill
-        highlight.OutlineColor = Color3.fromRGB(255, 0, 0)    -- Red outline
+        highlight.FillColor = Color3.fromRGB(1, 0, 0)   
+        highlight.OutlineColor = Color3.fromRGB(255, 0, 0) 
         highlight.Parent = character
     end
 end
