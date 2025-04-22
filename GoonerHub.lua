@@ -1,6 +1,6 @@
 local Players = game:GetService("Players")
 
-local toggleESP = true
+local toggleESP = false
 
 -- Function to apply or remove highlight
 local function updateHighlight(player)
@@ -28,43 +28,36 @@ local function updateAllPlayers()
     end
 end
 
--- GUI setup
-local function createGui(player)
-    local screenGui = Instance.new("ScreenGui")
-    screenGui.Parent = player:WaitForChild("PlayerGui")
+-- GUI Setup inside `StarterPlayerScripts`
+local screenGui = Instance.new("ScreenGui")
+screenGui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui") -- Now properly assigned to LocalPlayer
 
-    local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(0, 150, 0, 50)
-    frame.Position = UDim2.new(0, 0.01, 0, 0.01)
-    frame.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2)
-    frame.Parent = screenGui
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 150, 0, 50)
+frame.Position = UDim2.new(0, 0.01, 0, 0.01)
+frame.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2)
+frame.Parent = screenGui
 
-    local button = Instance.new("TextButton")
-    button.Size = UDim2.new(1, 0, 1, 0)
-    button.Text = "ESP"
-    button.TextScaled = true
-    button.BackgroundColor3 = Color3.new(0.8, 0, 0)
-    button.Parent = frame
+local button = Instance.new("TextButton")
+button.Size = UDim2.new(1, 0, 1, 0)
+button.Text = "ESP"
+button.TextScaled = true
+button.BackgroundColor3 = Color3.new(0.8, 0, 0)
+button.Parent = frame
 
-    -- Toggle ESP effect
-    button.MouseButton1Click:Connect(function()
-        toggleESP = not toggleESP
-        updateAllPlayers()
-        button.BackgroundColor3 = toggleESP and Color3.new(0.8, 0, 0) or Color3.new(0.2, 0.2, 0.2)
-    end)
-end
+-- Toggle ESP effect
+button.MouseButton1Click:Connect(function()
+    toggleESP = not toggleESP
+    updateAllPlayers()
+    button.BackgroundColor3 = toggleESP and Color3.new(0.8, 0, 0) or Color3.new(0.2, 0.2, 0.2)
+end)
 
--- Apply effect when players join or respawn
+-- Update ESP when players join
 Players.PlayerAdded:Connect(function(player)
     player.CharacterAdded:Connect(function()
         updateHighlight(player)
     end)
-    player:WaitForChild("PlayerGui")
-    createGui(player)
 end)
 
--- Apply effect to existing players
-for _, player in pairs(Players:GetPlayers()) do
-    updateHighlight(player)
-    createGui(player)
-end
+updateAllPlayers() -- Ensure all players have ESP applied
+
