@@ -1,24 +1,64 @@
-local function applyHighlight(player)
-    local highlight = Instance.new("Highlight")
-    highlight.Parent = player.Character
-    highlight.FillColor = Color3.new(1, 0, 0) -- Red color
-    highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-end
+local Players = game:GetService("Players")
+local StarterGui = game:GetService("StarterGui")
 
-local function highlightAllPlayers()
-    for _, player in pairs(game.Players:GetPlayers()) do
-        if player.Character then
-            applyHighlight(player)
+local toggleESP = true
+
+-- Function to apply or remove highlight
+local function updateHighlight(player)
+    if not player.Character then return end
+    local highlight = player.Character:FindFirstChild("Highlight")
+
+    if toggleESP then
+        if not highlight then
+            highlight = Instance.new("Highlight")
+            highlight.Parent = player.Character
+            highlight.FillColor = Color3.new(1, 0, 0) -- Red color
+            highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+        end
+    else
+        if highlight then
+            highlight:Destroy()
         end
     end
 end
 
--- Apply highlight when a player joins
-game.Players.PlayerAdded:Connect(function(player)
+-- Function to update all players
+local function updateAllPlayers()
+    for _, player in pairs(Players:GetPlayers()) do
+        updateHighlight(player)
+    end
+end
+
+-- GUI setup
+local screenGui = Instance.new("ScreenGui")
+screenGui.Parent = StarterGui
+
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 150, 0, 50)
+frame.Position = UDim2.new(0, 10, 0, 10)
+frame.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2)
+frame.Parent = screenGui
+
+local button = Instance.new("TextButton")
+button.Size = UDim2.new(1, 0, 1, 0)
+button.Text = "ESP"
+button.TextScaled = true
+button.BackgroundColor3 = Color3.new(0.8, 0, 0)
+button.Parent = frame
+
+-- Toggle ESP effect
+button.MouseButton1Click:Connect(function()
+    toggleESP = not toggleESP
+    updateAllPlayers()
+    button.BackgroundColor3 = toggleESP and Color3.new(0.8, 0, 0) or Color3.new(0.2, 0.2, 0.2)
+end)
+
+-- Apply effect when players join or respawn
+Players.PlayerAdded:Connect(function(player)
     player.CharacterAdded:Connect(function()
-        applyHighlight(player)
+        updateHighlight(player)
     end)
 end)
 
--- Apply highlight to all existing players
-highlightAllPlayers()
+-- Apply effect to existing players
+updateAllPlayers()
